@@ -11,6 +11,11 @@ New decentralized approach for importing and visualizing climate data in DHIS2, 
     - The dockerfile should run a service that follows the api that Abyout is defining
     - Each local implementation of a data connector should require its own auth credentials if needed and instructions for how to get them
 
+## System Architecture
+
+- See figure below for an overview of the system artchitecture (orange), data inputs (blue), and how it relates to the wider Climate/CHAP/DHIS2 ecosystem (red): 
+
+![system architecture](./figures/architecture-modified.png)
 
 ## Example (pending final api)
 
@@ -29,6 +34,8 @@ New decentralized approach for importing and visualizing climate data in DHIS2, 
     - can be used by chap to add support for gridded data
     - can be used by any other app that needs climate data, e.g. flood app
     - over time replace the hardcoded frontend solution for google earth with a more modular approach
+
+- **Dynamic**: As an alternative to manually importing climate data into DHIS2 representing a single snapshot in time, by instead adding a data connector wrapper around the import script it will enable easily running the data pipeline on-demand to enable live updates whenever the data is requested - if the underlying data source is a regularly updated data source or web api. 
 
 - **Sharing**: Once a country creates such a data connector repo, this can be shared and used by anyone else. 
 
@@ -55,7 +62,7 @@ New decentralized approach for importing and visualizing climate data in DHIS2, 
     - Docker compose that runs fastapi server
     - A fastapi route with an empty aggregate endpoint, to be filled by user
 
-### Developing some data connectors to give countries a good start, eg to copernicus/era5 or google earth
+### Developing some data connectors to give countries a good start, e.g. to copernicus/era5 or google earth
 
 - `dhis2/climate-data-local-test`
     - Python example or tutorial for a climate data connector showing how to symlink a local data folder during docker compose, and uses those files as local datasets to expose through the api
@@ -65,12 +72,27 @@ New decentralized approach for importing and visualizing climate data in DHIS2, 
     - Define list of Copernicus forecast datasets to expose
     - Using Copernicus `cdsapi` to fetch forecast grids and compute regional stats inside "aggregate" endpoint
 
-### Updating the climate app to be able to connect to one or more such data stores
+### Technical assistance to countries for creating data connectors
+
+- Ideally, each country can use the templates or guidelines to create their own data connectors
+- One role of the climate/chap team can be to provide technical assistance to help setup the data connectors, if this is requested by the countries. 
+- In some cases - if it proves too challenging or costly for the countries to create the data connectors - the country teams could focus on creating the scripts/pipelines for accessing the climate data as they normally would, but outsource the work of creating the data connector/wrapper to the climate/chap team
+
+### Updating the climate app to be able to connect to one or more such data connectors
 
 - In settings, user can add one or more urls to climate data connectors
 - Climate app then allows choosing between datasets across different data connectors, facilitating easier comparisons across data sources
+- Update the climate app to be able to connect to the underlying climate data and visualize them on a map, by accessing the `tileserver` endpoint of the connector api which serves map tiles for a given map extent and zoom
+
+### Updating chap-core to be able to connect to one or more such data connectors
+
+- Currently chap-core only retrieves aggregated org unit climate data if this has already been imported into dhis2 (as far as I understand)
+- Allow some option or function to circumvent dhis2 and directly access aggregated org unit climate data by accessing the `aggregate` endpoint of the connector api. This can be useful if using chap mostly programmatically outside of the dhis2 ecosystem, easier to get new data sources or more up-to-date climate data if this has not been imported into dhis2, avoids having to make any changes to the official data elements in the dhis2 database
+- Allow some option or function to retrieve the underlying grid data through the `data` endpoint, useful for some applications of chap-core that needs raw gridded climate data (Knut)
 
 ### Provide a python toolkit with utility functions to make data fetching and calculating aggregations easier for python based data connectors
 
 - `dhis2/climate-data-utils-python`
-    - Contains convenience funcs to calculate raster stats or serve gridded data
+    - Contains convenience functions to calculate raster stats or serve gridded data
+- **Alternatively: should this functionality instead be added directly to chap-core?**
+    - Usually I think of chap-core as only used for modelling/prediction, but as a `Climate Health Analytics Platform` maybe also these types of climate related functionality should go into chap-core? 
